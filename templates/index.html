@@ -1,0 +1,178 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <title>Spēles prognoze</title>
+
+    <script>
+        function validateForm() {
+            var team1 = document.getElementById("team1").value;
+            var team2 = document.getElementById("team2").value;
+            if (team1 === team2) {
+                alert("Lūdzu, izvēlieties dažādas komandas Team 1 un Team 2.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+</head>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+
+        }
+        .t1, .t2{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap:10px;
+
+            background-color: antiquewhite;
+            padding: 5px;
+            border-radius: 10px;
+            background-color: #1e3c72;
+            color: white;
+            width: 380px;
+            padding-bottom: 10px;
+        }
+
+        #season_input{
+            background-color: lightgray;
+            border-radius: 20px;
+            border: none;
+            margin-top:20px;
+            margin-bottom: 30px;
+        }
+
+
+        .wrapper{
+            width: 100%;
+            background: #ffffff1a;
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+        }
+        label {
+            font-size: 1rem;
+            color: white;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        select, input[type="number"] {
+            padding: 5px;
+            border-radius: 4px;
+            border: none;
+            font-size: 1rem;
+            background: #e3f2fd;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            box-shadow: 0 0 8px #ffd700;
+        }
+
+
+
+        .container_teams{
+          display: flex;
+          flex-direction: row;
+          gap:100px;
+
+        }
+
+        .season{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+        }
+
+        button{
+            border-color: #333;
+            border-radius: 30px;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            background: #1e3c72;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: #2a5298;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+        }
+
+    </style>
+<body>
+    <div class="wrapper">
+    <h1>Prognoze spēlei starp komandām</h1>
+
+
+
+    <form action="/predict" method="get" onsubmit="return validateForm();">
+        <div class ="container_teams">
+
+            <div class="t1">
+        <label id="l1" for="team1">Komanda 1:</label>
+        <select id="s1" name="team1" id="team1" required>
+            {% for team in teams %}
+                <option id="o1" value="{{ team['TEAM'] }}">{{ team['TEAM'] }} ({{ team['CONF'] }})</option>
+            {% endfor %}
+        </select>
+    </div>
+        <br><br>
+
+        <div class="t2">
+        <label id="l2"  for="team2">Komanda 2:</label>
+        <select id="s2" name="team2" id="team2" required>
+            {% for team in teams %}
+                <option value="{{ team['TEAM'] }}">{{ team['TEAM'] }} ({{ team['CONF'] }})</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+        <br><br>
+
+       <div class="season">
+        <label for="season">Sezona (gads):</label>
+        <input id="season_input" type="number" name="season" id="season" min="1900" max="2100" required>
+
+        <br><br>
+
+        <button id="button" type="submit">Prognozēt</button>
+        <p><a href="{{ url_for('predictions') }}">Iepriekšējas prognozes</a></p>
+        </div>
+    </form>
+
+    </div>
+
+</body>
+</html>
