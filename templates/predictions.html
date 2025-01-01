@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iepriekšējās prognozes</title>
+
+     <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction:column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Iepriekšējās prognozes</h1>
+    <table border="none">
+        <thead>
+            <tr>
+                <th>Datums</th>
+                <th>Komanda 1</th>
+                <th>Komanda 2</th>
+                <th>Sezona</th>
+                <th>1. komandas uzvaras prognoze</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prediction in predictions %}
+            <tr>
+                <td>{{ prediction.date }}</td>
+                <td>{{ prediction.team1 }}</td>
+                <td>{{ prediction.team2 }}</td>
+                <td>{{ prediction.season }}</td>
+                <td>{{ prediction.prediction }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+ <form action="/clear_predictions" method="POST" style="margin-bottom: 20px;">
+        <button type="submit">
+            Notīrīt prognozes
+        </button>
+    </form>
+</body>
+</html>
