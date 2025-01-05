@@ -109,4 +109,6 @@ def predict_quantity(predictionModel):
     logging.debug(f"Predicted probability: {predicted_probability}")
     logging.debug(f"Predicted probability: {predicted_probability2}")
 
+    ave_prediction(user_id = session.get('user_id'),input_data=new_game, prediction=predicted_probability)
+
     return predicted_probability
