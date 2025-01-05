@@ -1,26 +1,35 @@
-# app.py
+#app.py
 import pandas as pd
-from flask import Flask, render_template, request
 from models import PredictionModel
 import prediction
 import logging
 import kagglehub
 import os
+from database import save_prediction, register_user, authenticate_user, \
+    get_user_predictions, SessionLocal, Prediction
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
 
-dataset_path = kagglehub.dataset_download("andrewsundberg/college-basketball-dataset")
-csv_files = [file for file in os.listdir(dataset_path) if file.endswith(".csv")]
-if csv_files:
-    data = pd.read_csv(os.path.join(dataset_path, csv_files[0]))
-    print(f"Loaded data from: {csv_files[0]}")
+@app.after_request
+def add_header(response):
+    response.cache_control.no_cache = True
+    return response
+    
+target_file = "cbb.csv"
+target_path = os.path.join(dataset_path, target_file)
+
+if os.path.exists(target_path):
+    data = pd.read_csv(target_path)
+    print(f"Loaded data from: {target_file}")
+    logging.debug(f"CSV data loaded successfully. Shape: {data.shape}")
 else:
-    raise FileNotFoundError("No CSV file found in the downloaded dataset.")
+    raise FileNotFoundError(f"{target_file} not found in the downloaded dataset.")
 
 
-logging.debug(f"CSV data loaded successfully. Shape: {data.shape}")
 
 def get_team_stats(team, season):
     """
@@ -68,6 +77,11 @@ def index():
 
 @app.route('/predict', methods=['GET'])
 def predict_quantity_route():
+    user_id = session.get('user_id')
+    if 'user_id' not in session:
+        flash("Please log in to access this page.", "warning")
+        return redirect(url_for('login'))
+    
     team1 = request.args.get('team1')
     team2 = request.args.get('team2')
     season = request.args.get('season')
@@ -98,6 +112,7 @@ def predict_quantity_route():
         predicted_outcome = prediction.predict_quantity(predictionModel)
 
         prediction_id = save_prediction(
+            user_id=user_id,
             input_data={'team1': team1, 'team2': team2, 'season': season},
             prediction=predicted_outcome
         )
@@ -139,6 +154,75 @@ def predictions():
 
     return render_template("predictions.html", predictions=display_predictions)
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'user_id' in session:
+        return render_template('already_logged_in.html',
+                               username=session.get('username')) 
+
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        try:
+            register_user(username, email, password)
+            flash("Registration successful! Please log in.", "success")
+            return redirect(url_for('login'))
+        except ValueError as e:
+            flash(str(e), "danger")
+
+    return render_template('register.html')
+
+
+app.secret_key = os.urandom(24)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user_id' in session: 
+        print(f"User is already logged in: {session['user_id']}")
+        return redirect(url_for('already_logged_in'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        if not username or not password:
+            flash("Username and password are required.", "danger")
+            return redirect(url_for('login'))
+
+        user = authenticate_user(username, password)
+
+        if user:
+            session['user_id'] = user.id
+            session['username'] = user.username
+            flash("Login successful!", "success")
+            return redirect(url_for('index')) 
+        else:
+            flash("Invalid username or password.", "danger")
+
+    return render_template('login.html')
+
+
+
+@app.route('/logout')
+def logout():
+    session.clear()  
+    resp = make_response(redirect(url_for('login')))
+    resp.delete_cookie('session') 
+    flash("You have been logged out.", "info")
+    return resp
+
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        flash("Please log in to access this page.", "warning")
+        return redirect(url_for('login'))
+    return render_template('dashboard.html', username=session.get('username'))
+
+
 @app.route('/clear_predictions', methods=['POST'])
 def clear_predictions():
     try:
@@ -151,6 +235,12 @@ def clear_predictions():
     return redirect(url_for('predictions'))
 
 
+@app.route('/already_logged_in')
+def already_logged_in():
+    if 'user_id' not in session:  
+        return redirect(url_for('login'))
+    return render_template('already_logged_in.html', username=session.get('username'))
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
